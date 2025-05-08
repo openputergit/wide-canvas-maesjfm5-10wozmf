@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Café Delight | Restaurant Menu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .logo-font {
+            font-family: 'Playfair Display', serif;
+        }
+        .menu-card {
+            transition: transform 0.3s ease;
+        }
+        .menu-card:hover {
+            transform: translateY(-5px);
+        }
+        .cart-notification {
+            animation: fadeOut 2s forwards;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm fixed w-full top-0 z-50">
+        <nav class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=64" alt="Café Logo" class="w-12 h-12 rounded-full">
+                <h1 class="ml-3 text-2xl font-bold logo-font text-teal-600">Café Delight</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="cartBtn" class="relative">
+                    <i class="bi bi-cart text-2xl text-teal-600"></i>
+                    <span id="cartCount" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="pt-24 pb-12 bg-gradient-to-r from-teal-500 to-teal-600 text-white">
+        <div class="container mx-auto px-4 py-8">
+            <h2 class="text-4xl md:text-5xl font-bold logo-font text-center mb-4">Discover Our Menu</h2>
+            <p class="text-center text-lg opacity-90 max-w-2xl mx-auto">Savor the finest selection of drinks and dishes, crafted with love and served with passion.</p>
+        </div>
+    </section>
+
+    <!-- Category Filter -->
+    <div class="container mx-auto px-4 py-6">
+        <div class="flex flex-wrap gap-2 justify-center" id="categoryFilter">
+            <button class="category-btn bg-teal-600 text-white px-4 py-2 rounded-full text-sm" data-category="all">All</button>
+            <button class="category-btn bg-white text-teal-600 px-4 py-2 rounded-full text-sm" data-category="coffee">Coffee</button>
+            <button class="category-btn bg-white text-teal-600 px-4 py-2 rounded-full text-sm" data-category="desserts">Desserts</button>
+            <button class="category-btn bg-white text-teal-600 px-4 py-2 rounded-full text-sm" data-category="main">Main Course</button>
+        </div>
+    </div>
+
+    <!-- Menu Items Grid -->
+    <div class="container mx-auto px-4 py-8">
+        <div id="menuGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <!-- Items will be populated dynamically -->
+        </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cartModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Your Cart</h3>
+                <button onclick="toggleCart()" class="text-gray-500 hover:text-gray-700">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div id="cartItems" class="space-y-4 max-h-96 overflow-y-auto">
+                <!-- Cart items will be populated here -->
+            </div>
+            <div class="border-t mt-4 pt-4">
+                <div class="flex justify-between mb-4">
+                    <span class="font-semibold">Total:</span>
+                    <span id="cartTotal" class="font-bold">$0.00</span>
+                </div>
+                <button onclick="checkout()" class="w-full bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700 transition-colors">
+                    Checkout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="fixed bottom-4 right-4 bg-teal-600 text-white px-4 py-2 rounded-lg hidden"></div>
+
+    <script>
+        const menuItems = [
+            { id: 1, name: "Cappuccino", price: 4.50, category: "coffee", image: "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=300" },
+            { id: 2, name: "Chocolate Cake", price: 6.99, category: "desserts", image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=300" },
+            { id: 3, name: "Grilled Salmon", price: 18.99, category: "main", image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=300" },
+            { id: 4, name: "Latte", price: 4.00, category: "coffee", image: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=300" },
+            { id: 5, name: "Tiramisu", price: 7.99, category: "desserts", image: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=300" },
+            { id: 6, name: "Pasta Carbonara", price: 15.99, category: "main", image: "https://images.unsplash.com/photo-1612874742237-6526221588e3?w=300" },
+            { id: 7, name: "Espresso", price: 3.00, category: "coffee", image: "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=300" },
+            { id: 8, name: "Cheesecake", price: 6.99, category: "desserts", image: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=300" },
+        ];
+
+        let cart = [];
+
+        function displayMenuItems(category = 'all') {
+            const menuGrid = document.getElementById('menuGrid');
+            menuGrid.innerHTML = '';
+            
+            const filteredItems = category === 'all' 
+                ? menuItems 
+                : menuItems.filter(item => item.category === category);
+
+            filteredItems.forEach(item => {
+                const itemCard = `
+                    <div class="menu-card bg-white rounded-lg overflow-hidden shadow-md">
+                        <img src="${item.image}" alt="${item.name}" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <h3 class="font-semibold text-lg mb-2">${item.name}</h3>
+                            <div class="flex justify-between items-center">
+                                <span class="text-teal-600 font-bold">$${item.price.toFixed(2)}</span>
+                                <button onclick="addToCart(${item.id})" class="bg-teal-600 text-white px-3 py-1 rounded-full text-sm hover:bg-teal-700 transition-colors">
+                                    Add to Cart
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                menuGrid.innerHTML += itemCard;
+            });
+        }
+
+        function addToCart(itemId) {
+            const item = menuItems.find(i => i.id === itemId);
+            const cartItem = cart.find(i => i.id === itemId);
+
+            if (cartItem) {
+                cartItem.quantity++;
+            } else {
+                cart.push({ ...item, quantity: 1 });
+            }
+
+            updateCartCount();
+            showNotification(`Added ${item.name} to cart`);
+        }
+
+        function updateCartCount() {
+            const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+            document.getElementById('cartCount').textContent = count;
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.remove('hidden');
+            notification.classList.add('cart-notification');
+            
+            setTimeout(() => {
+                notification.classList.add('hidden');
+                notification.classList.remove('cart-notification');
+            }, 2000);
+        }
+
+        function toggleCart() {
+            const modal = document.getElementById('cartModal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
+            
+            if (!modal.classList.contains('hidden')) {
+                updateCartDisplay();
+            }
+        }
+
+        function updateCartDisplay() {
+            const cartItems = document.getElementById('cartItems');
+            const cartTotal = document.getElementById('cartTotal');
+            cartItems.innerHTML = '';
+
+            if (cart.length === 0) {
+                cartItems.innerHTML = '<p class="text-gray-500 text-center">Your cart is empty</p>';
+                cartTotal.textContent = '$0.00';
+                return;
+            }
+
+            let total = 0;
+            cart.forEach(item => {
+                total += item.price * item.quantity;
+                cartItems.innerHTML += `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h4 class="font-medium">${item.name}</h4>
+                            <p class="text-sm text-gray-600">$${item.price.toFixed(2)} × ${item.quantity}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="updateQuantity(${item.id}, ${item.quantity - 1})" class="text-gray-500 hover:text-gray-700">
+                                <i class="bi bi-dash-circle"></i>
+                            </button>
+                            <span>${item.quantity}</span>
+                            <button onclick="updateQuantity(${item.id}, ${item.quantity + 1})" class="text-gray-500 hover:text-gray-700">
+                                <i class="bi bi-plus-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            cartTotal.textContent = `$${total.toFixed(2)}`;
+        }
+
+        function updateQuantity(itemId, newQuantity) {
+            if (newQuantity < 1) {
+                cart = cart.filter(item => item.id !== itemId);
+            } else {
+                const item = cart.find(item => item.id === itemId);
+                if (item) item.quantity = newQuantity;
+            }
+            
+            updateCartCount();
+            updateCartDisplay();
+        }
+
+        function checkout() {
+            if (cart.length === 0) {
+                showNotification('Cart is empty');
+                return;
+            }
+            
+            showNotification('Order placed successfully!');
+            cart = [];
+            updateCartCount();
+            toggleCart();
+        }
+
+        // Event Listeners
+        document.getElementById('cartBtn').addEventListener('click', toggleCart);
+        
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.category-btn').forEach(b => {
+                    b.classList.remove('bg-teal-600', 'text-white');
+                    b.classList.add('bg-white', 'text-teal-600');
+                });
+                
+                e.target.classList.remove('bg-white', 'text-teal-600');
+                e.target.classList.add('bg-teal-600', 'text-white');
+                
+                displayMenuItems(e.target.dataset.category);
+            });
+        });
+
+        // Initial display
+        displayMenuItems();
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
